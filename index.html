@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실험 4-1 | 녹 면적 분석기</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0a0e17;
+            --bg-card: #111827;
+            --bg-card-hover: #1a2332;
+            --bg-input: #1e293b;
+            --border: #2a3a4e;
+            --border-active: #f59e0b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #f59e0b;
+            --accent-dim: rgba(245, 158, 11, 0.15);
+            --rust-color: #e67e22;
+            --success: #10b981;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --radius: 10px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 1.2rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-badge {
+            background: var(--accent);
+            color: #000;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        .header h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .header-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Layout */
+        .app {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 1.5rem;
+            min-height: calc(100vh - 70px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
+        }
+
+        .card-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-title::before {
+            content: '';
+            width: 3px;
+            height: 14px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        /* Shape selector */
+        .shape-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .shape-btn {
+            background: var(--bg-input);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 0.7rem 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .shape-btn:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+            background: var(--accent-dim);
+        }
+
+        .shape-btn.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+            font-weight: 700;
+        }
+
+        .shape-btn .shape-icon {
+            font-size: 1.4rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Upload */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+            color: var(--text-secondary);
+        }
+
+        .upload-zone input { display: none; }
+
+        .upload-zone .upload-icon {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Angle tabs */
+        .angle-tabs {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .angle-tab {
+            flex: 1;
+            min-width: 50px;
+            padding: 6px 4px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .angle-tab:hover {
+            border-color: var(--text-secondary);
+            color: var(--text-secondary);
+        }
+
+        .angle-tab.has-image {
+            border-color: var(--success);
+            color: var(--success);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .angle-tab.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+            font-weight: 700;
+        }
+
+        .angle-tab.active.has-image {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        /* Sensitivity controls */
+        .control-row {
+            margin-bottom: 0.7rem;
+        }
+
+        .control-label {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--accent);
+        }
+
+        .range-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .range-row input[type="range"] {
+            flex: 1;
+            height: 4px;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+            background: var(--bg-input);
+        }
+
+        .range-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+        }
+
+        .range-row input[type="number"] {
+            width: 52px;
+            padding: 4px 6px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            text-align: center;
+        }
+
+        .range-row input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .range-sep {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+        }
+
+        .btn-reset {
+            width: 100%;
+            padding: 7px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .btn-reset:hover {
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+        }
+
+        /* Main content */
+        .main {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Canvas area */
+        .canvas-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .canvas-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .canvas-header {
+            padding: 0.6rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .canvas-header .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .canvas-header .dot-blue { background: var(--info); }
+        .canvas-header .dot-orange { background: var(--rust-color); }
+
+        .canvas-body {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0d1117;
+            position: relative;
+        }
+
+        .canvas-body canvas {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+        }
+
+        .canvas-empty {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .canvas-empty .empty-icon {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 0.5rem;
+            opacity: 0.4;
+        }
+
+        /* Results bar */
+        .results-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.8rem;
+        }
+
+        .result-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .result-item.highlight {
+            border-color: var(--accent);
+            background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02));
+        }
+
+        .result-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .result-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .result-item.highlight .result-value {
+            color: var(--accent);
+        }
+
+        .result-unit {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Batch comparison table */
+        .batch-table-wrapper {
+            overflow-x: auto;
+        }
+
+        .batch-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+        }
+
+        .batch-table th {
+            background: var(--bg-input);
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 8px 12px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.72rem;
+            white-space: nowrap;
+        }
+
+        .batch-table td {
+            padding: 8px 12px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+
+        .batch-table tr:hover td {
+            background: var(--bg-card-hover);
+        }
+
+        .batch-table .shape-name {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        .batch-table .no-data {
+            color: var(--text-muted);
+            font-family: 'Noto Sans KR', sans-serif;
+            font-style: italic;
+        }
+
+        .rust-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-input);
+            border-radius: 3px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+
+        .rust-bar-fill {
+            height: 100%;
+            background: var(--rust-color);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        /* Export button */
+        .btn-export {
+            padding: 10px 20px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .btn-export:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .export-row {
+            display: flex;
+            gap: 0.8rem;
+            justify-content: flex-end;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            margin-top: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .app {
+                grid-template-columns: 1fr;
+            }
+            .canvas-area {
+                grid-template-columns: 1fr;
+            }
+            .results-bar {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header { padding: 1rem; }
+            .app { padding: 0.8rem; }
+            .results-bar { grid-template-columns: 1fr; }
+            .shape-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <span class="header-badge">실험 4-1</span>
+        <div>
+            <h1>형상별 녹 면적 분석기</h1>
+            <div class="header-sub">다양한 형상의 철 재질 물체에서 코팅 효과 검증</div>
+        </div>
+    </div>
+    <div class="header-sub">북항의 바람 속 소금기를 막는 비밀 코팅 방패를 찾아라!</div>
+</div>
+
+<div class="app">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Shape selector -->
+        <div class="card">
+            <div class="card-title">시료 선택</div>
+            <div class="shape-grid" id="shapeGrid">
+                <button class="shape-btn active" data-shape="pipe" onclick="selectShape('pipe')">
+                    <span class="shape-icon">⊖</span>파이프
+                </button>
+                <button class="shape-btn" data-shape="bolt" onclick="selectShape('bolt')">
+                    <span class="shape-icon">🔩</span>볼트
+                </button>
+                <button class="shape-btn" data-shape="nut" onclick="selectShape('nut')">
+                    <span class="shape-icon">⬡</span>너트
+                </button>
+                <button class="shape-btn" data-shape="washer" onclick="selectShape('washer')">
+                    <span class="shape-icon">◎</span>와셔
+                </button>
+            </div>
+        </div>
+
+        <!-- Coating selector -->
+        <div class="card">
+            <div class="card-title">코팅 조건</div>
+            <div class="shape-grid" id="coatingGrid">
+                <button class="shape-btn active" data-coating="spray" onclick="selectCoating('spray')" style="grid-column: span 2;">
+                    방오 스프레이
+                </button>
+                <button class="shape-btn" data-coating="none" onclick="selectCoating('none')" style="grid-column: span 2;">
+                    무코팅 (대조군)
+                </button>
+            </div>
+        </div>
+
+        <!-- Angle tabs + Upload -->
+        <div class="card">
+            <div class="card-title">촬영 각도</div>
+            <div class="angle-tabs" id="angleTabs"></div>
+            <div style="margin-top: 0.8rem;">
+                <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                    <span class="upload-icon">📷</span>
+                    선택한 각도의 사진 업로드
+                    <input type="file" id="fileInput" accept="image/*">
+                </div>
+            </div>
+        </div>
+
+        <!-- Sensitivity -->
+        <div class="card">
+            <div class="card-title">녹 감지 민감도</div>
+
+            <div class="control-row">
+                <div class="control-label">
+                    <span>색상 범위 (Hue)</span>
+                    <span class="control-value" id="hueDisplay">10° ~ 100°</span>
+                </div>
+                <div class="range-row">
+                    <input type="number" id="hueMin" value="10" min="0" max="360" step="1">
+                    <input type="range" id="hueMinSlider" min="0" max="360" value="10" step="1">
+                    <span class="range-sep">~</span>
+                    <input type="range" id="hueMaxSlider" min="0" max="360" value="100" step="1">
+                    <input type="number" id="hueMax" value="100" min="0" max="360" step="1">
+                </div>
+            </div>
+
+            <div class="control-row">
+                <div class="control-label">
+                    <span>포화도 (Saturation)</span>
+                    <span class="control-value" id="satDisplay">0.20 ~ 1.00</span>
+                </div>
+                <div class="range-row">
+                    <input type="number" id="satMin" value="0.2" min="0" max="1" step="0.01">
+                    <input type="range" id="satMinSlider" min="0" max="1" value="0.2" step="0.01">
+                    <span class="range-sep">~</span>
+                    <input type="range" id="satMaxSlider" min="0" max="1" value="1" step="0.01">
+                    <input type="number" id="satMax" value="1" min="0" max="1" step="0.01">
+                </div>
+            </div>
+
+            <div class="control-row">
+                <div class="control-label">
+                    <span>밝기 (Lightness)</span>
+                    <span class="control-value" id="lightDisplay">0.10 ~ 0.70</span>
+                </div>
+                <div class="range-row">
+                    <input type="number" id="lightMin" value="0.1" min="0" max="1" step="0.01">
+                    <input type="range" id="lightMinSlider" min="0" max="1" value="0.1" step="0.01">
+                    <span class="range-sep">~</span>
+                    <input type="range" id="lightMaxSlider" min="0" max="1" value="0.7" step="0.01">
+                    <input type="number" id="lightMax" value="0.7" min="0" max="1" step="0.01">
+                </div>
+            </div>
+
+            <div class="control-row">
+                <div class="control-label">
+                    <span>배경 제외 임계값</span>
+                    <span class="control-value" id="bgDisplay">240</span>
+                </div>
+                <div class="range-row">
+                    <input type="range" id="bgThreshSlider" min="180" max="255" value="240" step="1">
+                    <input type="number" id="bgThresh" value="240" min="180" max="255" step="1">
+                </div>
+            </div>
+
+            <button class="btn-reset" onclick="resetDefaults()">↺ 기본값 초기화</button>
+        </div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+        <!-- Canvas -->
+        <div class="canvas-area">
+            <div class="canvas-card">
+                <div class="canvas-header"><span class="dot dot-blue"></span>원본 이미지</div>
+                <div class="canvas-body" id="originalBody">
+                    <canvas id="originalCanvas" style="display:none;"></canvas>
+                    <div class="canvas-empty" id="originalEmpty">
+                        <span class="empty-icon">🖼️</span>
+                        시료와 각도를 선택하고<br>사진을 업로드하세요
+                    </div>
+                </div>
+            </div>
+            <div class="canvas-card">
+                <div class="canvas-header"><span class="dot dot-orange"></span>녹 감지 결과</div>
+                <div class="canvas-body" id="maskBody">
+                    <canvas id="maskCanvas" style="display:none;"></canvas>
+                    <div class="canvas-empty" id="maskEmpty">
+                        <span class="empty-icon">🔍</span>
+                        분석 결과가<br>여기에 표시됩니다
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="results-bar" id="resultsBar" style="display:none;">
+            <div class="result-item highlight">
+                <div class="result-label">녹 비율</div>
+                <div class="result-value" id="rustPercent">—</div>
+                <div class="result-unit">%</div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">녹 픽셀</div>
+                <div class="result-value" id="rustPixels">—</div>
+                <div class="result-unit">px</div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">시료 영역</div>
+                <div class="result-value" id="specimenPixels">—</div>
+                <div class="result-unit">px</div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">배경 제외</div>
+                <div class="result-value" id="bgPixels">—</div>
+                <div class="result-unit">px</div>
+            </div>
+        </div>
+
+        <!-- Batch comparison -->
+        <div class="card">
+            <div class="card-title">전체 시료 비교표</div>
+            <div class="batch-table-wrapper">
+                <table class="batch-table">
+                    <thead>
+                        <tr>
+                            <th>시료</th>
+                            <th>코팅</th>
+                            <th>각도별 녹 비율 (%)</th>
+                            <th>평균 녹 비율</th>
+                            <th>부식 수준</th>
+                        </tr>
+                    </thead>
+                    <tbody id="batchBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Export -->
+        <div class="export-row">
+            <button class="btn-export" onclick="exportCSV()">📊 CSV 내보내기</button>
+            <button class="btn-export" onclick="exportCurrentImage()">📥 현재 결과 이미지 저장</button>
+        </div>
+    </div>
+</div>
+
+<div class="footer">
+    © 2026 실험 4-1 녹 면적 분석기 | 북항의 바람 속 소금기를 막는 비밀 코팅 방패를 찾아라!
+</div>
+
+<script>
+// ===== Data Structure =====
+const shapes = {
+    pipe: { name: '파이프', angles: ['앞면', '옆면'] },
+    bolt: { name: '볼트', angles: ['윗면', '옆면'] },
+    nut: { name: '너트', angles: ['윗면', '아랫면', '옆면'] },
+    washer: { name: '와셔', angles: ['앞면', '뒷면'] }
+};
+
+const coatings = {
+    spray: '방오 스프레이',
+    none: '무코팅'
+};
+
+// Store all data: results[shape][coating][angleIndex] = { rustPercent, rustPx, specimenPx, imageData }
+const results = {};
+Object.keys(shapes).forEach(s => {
+    results[s] = {};
+    Object.keys(coatings).forEach(c => {
+        results[s][c] = {};
+    });
+});
+
+let currentShape = 'pipe';
+let currentCoating = 'spray';
+let currentAngle = 0;
+let currentImageData = null;
+
+const origCanvas = document.getElementById('originalCanvas');
+const maskCanvas = document.getElementById('maskCanvas');
+const origCtx = origCanvas.getContext('2d');
+const maskCtx = maskCanvas.getContext('2d');
+
+// ===== Defaults =====
+const defaults = { hueMin: 10, hueMax: 100, satMin: 0.2, satMax: 1, lightMin: 0.1, lightMax: 0.7, bgThresh: 240 };
+
+function getParams() {
+    return {
+        hueMin: parseFloat(document.getElementById('hueMin').value),
+        hueMax: parseFloat(document.getElementById('hueMax').value),
+        satMin: parseFloat(document.getElementById('satMin').value),
+        satMax: parseFloat(document.getElementById('satMax').value),
+        lightMin: parseFloat(document.getElementById('lightMin').value),
+        lightMax: parseFloat(document.getElementById('lightMax').value),
+        bgThresh: parseInt(document.getElementById('bgThresh').value)
+    };
+}
+
+function resetDefaults() {
+    document.getElementById('hueMin').value = defaults.hueMin;
+    document.getElementById('hueMax').value = defaults.hueMax;
+    document.getElementById('hueMinSlider').value = defaults.hueMin;
+    document.getElementById('hueMaxSlider').value = defaults.hueMax;
+    document.getElementById('satMin').value = defaults.satMin;
+    document.getElementById('satMax').value = defaults.satMax;
+    document.getElementById('satMinSlider').value = defaults.satMin;
+    document.getElementById('satMaxSlider').value = defaults.satMax;
+    document.getElementById('lightMin').value = defaults.lightMin;
+    document.getElementById('lightMax').value = defaults.lightMax;
+    document.getElementById('lightMinSlider').value = defaults.lightMin;
+    document.getElementById('lightMaxSlider').value = defaults.lightMax;
+    document.getElementById('bgThresh').value = defaults.bgThresh;
+    document.getElementById('bgThreshSlider').value = defaults.bgThresh;
+    updateDisplays();
+    if (currentImageData) analyze();
+}
+
+// ===== Sync sliders & inputs =====
+const paramPairs = [
+    ['hueMin', 'hueMinSlider'], ['hueMax', 'hueMaxSlider'],
+    ['satMin', 'satMinSlider'], ['satMax', 'satMaxSlider'],
+    ['lightMin', 'lightMinSlider'], ['lightMax', 'lightMaxSlider'],
+    ['bgThresh', 'bgThreshSlider']
+];
+
+paramPairs.forEach(([numId, sliderId]) => {
+    const numEl = document.getElementById(numId);
+    const sliderEl = document.getElementById(sliderId);
+    numEl.addEventListener('input', () => { sliderEl.value = numEl.value; updateDisplays(); if (currentImageData) analyze(); });
+    sliderEl.addEventListener('input', () => { numEl.value = sliderEl.value; updateDisplays(); if (currentImageData) analyze(); });
+});
+
+function updateDisplays() {
+    document.getElementById('hueDisplay').textContent = `${document.getElementById('hueMin').value}° ~ ${document.getElementById('hueMax').value}°`;
+    document.getElementById('satDisplay').textContent = `${parseFloat(document.getElementById('satMin').value).toFixed(2)} ~ ${parseFloat(document.getElementById('satMax').value).toFixed(2)}`;
+    document.getElementById('lightDisplay').textContent = `${parseFloat(document.getElementById('lightMin').value).toFixed(2)} ~ ${parseFloat(document.getElementById('lightMax').value).toFixed(2)}`;
+    document.getElementById('bgDisplay').textContent = document.getElementById('bgThresh').value;
+}
+
+// ===== Shape & Coating Selection =====
+function selectShape(shape) {
+    currentShape = shape;
+    currentAngle = 0;
+    document.querySelectorAll('#shapeGrid .shape-btn').forEach(b => b.classList.toggle('active', b.dataset.shape === shape));
+    renderAngleTabs();
+    loadCurrentAngle();
+}
+
+function selectCoating(coating) {
+    currentCoating = coating;
+    document.querySelectorAll('#coatingGrid .shape-btn').forEach(b => b.classList.toggle('active', b.dataset.coating === coating));
+    renderAngleTabs();
+    loadCurrentAngle();
+}
+
+function renderAngleTabs() {
+    const angles = shapes[currentShape].angles;
+    const container = document.getElementById('angleTabs');
+    container.innerHTML = '';
+    angles.forEach((label, i) => {
+        const tab = document.createElement('button');
+        tab.className = 'angle-tab' + (i === currentAngle ? ' active' : '');
+        if (results[currentShape][currentCoating][i]) tab.classList.add('has-image');
+        tab.textContent = label;
+        tab.onclick = () => { currentAngle = i; renderAngleTabs(); loadCurrentAngle(); };
+        container.appendChild(tab);
+    });
+}
+
+function loadCurrentAngle() {
+    const data = results[currentShape][currentCoating][currentAngle];
+    if (data && data.imgSrc) {
+        const img = new Image();
+        img.onload = () => {
+            origCanvas.width = img.width;
+            origCanvas.height = img.height;
+            maskCanvas.width = img.width;
+            maskCanvas.height = img.height;
+            origCtx.drawImage(img, 0, 0);
+            currentImageData = origCtx.getImageData(0, 0, img.width, img.height).data;
+            origCanvas.style.display = 'block';
+            document.getElementById('originalEmpty').style.display = 'none';
+            analyze();
+        };
+        img.src = data.imgSrc;
+    } else {
+        currentImageData = null;
+        origCanvas.style.display = 'none';
+        maskCanvas.style.display = 'none';
+        document.getElementById('originalEmpty').style.display = 'block';
+        document.getElementById('maskEmpty').style.display = 'block';
+        document.getElementById('resultsBar').style.display = 'none';
+    }
+}
+
+// ===== File Upload =====
+document.getElementById('fileInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        const imgSrc = ev.target.result;
+        if (!results[currentShape][currentCoating][currentAngle]) {
+            results[currentShape][currentCoating][currentAngle] = {};
+        }
+        results[currentShape][currentCoating][currentAngle].imgSrc = imgSrc;
+        loadCurrentAngle();
+        renderAngleTabs();
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+});
+
+// ===== Analysis =====
+function analyze() {
+    if (!currentImageData) return;
+    const p = getParams();
+    const w = origCanvas.width, h = origCanvas.height;
+    const data = currentImageData;
+    const rustPixelsArr = new Uint8ClampedArray(w * h * 4);
+
+    let rustCount = 0;
+    let bgCount = 0;
+    let specimenCount = 0;
+
+    for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i+1], b = data[i+2];
+
+        // Background exclusion: if all channels above threshold → background
+        if (r >= p.bgThresh && g >= p.bgThresh && b >= p.bgThresh) {
+            bgCount++;
+            rustPixelsArr[i] = 40; rustPixelsArr[i+1] = 40; rustPixelsArr[i+2] = 50; rustPixelsArr[i+3] = 255;
+            continue;
+        }
+
+        specimenCount++;
+
+        // Gray exclusion
+        const grayness = Math.abs(r - g) + Math.abs(g - b) + Math.abs(b - r);
+        if (grayness < 30) {
+            rustPixelsArr[i] = 30; rustPixelsArr[i+1] = 30; rustPixelsArr[i+2] = 40; rustPixelsArr[i+3] = 255;
+            continue;
+        }
+
+        // RGB → HSL
+        const rn = r/255, gn = g/255, bn = b/255;
+        const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn);
+        const l = (max + min) / 2;
+        let hue = 0, sat = 0;
+
+        if (max !== min) {
+            const d = max - min;
+            sat = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case rn: hue = ((gn - bn) / d + (gn < bn ? 6 : 0)) / 6; break;
+                case gn: hue = ((bn - rn) / d + 2) / 6; break;
+                case bn: hue = ((rn - gn) / d + 4) / 6; break;
+            }
+        }
+
+        const hueDeg = hue * 360;
+
+        if (hueDeg >= p.hueMin && hueDeg <= p.hueMax && sat >= p.satMin && sat <= p.satMax && l >= p.lightMin && l <= p.lightMax) {
+            rustCount++;
+            rustPixelsArr[i] = 230; rustPixelsArr[i+1] = 126; rustPixelsArr[i+2] = 34; rustPixelsArr[i+3] = 230;
+        } else {
+            rustPixelsArr[i] = 30; rustPixelsArr[i+1] = 30; rustPixelsArr[i+2] = 40; rustPixelsArr[i+3] = 255;
+        }
+    }
+
+    const rustImgData = new ImageData(rustPixelsArr, w, h);
+    maskCtx.putImageData(rustImgData, 0, 0);
+    maskCanvas.style.display = 'block';
+    document.getElementById('maskEmpty').style.display = 'none';
+
+    const percent = specimenCount > 0 ? Math.round((rustCount / specimenCount) * 1000) / 10 : 0;
+
+    document.getElementById('rustPercent').textContent = percent;
+    document.getElementById('rustPixels').textContent = rustCount.toLocaleString();
+    document.getElementById('specimenPixels').textContent = specimenCount.toLocaleString();
+    document.getElementById('bgPixels').textContent = bgCount.toLocaleString();
+    document.getElementById('resultsBar').style.display = 'grid';
+
+    // Save result
+    if (!results[currentShape][currentCoating][currentAngle]) {
+        results[currentShape][currentCoating][currentAngle] = {};
+    }
+    results[currentShape][currentCoating][currentAngle].rustPercent = percent;
+    results[currentShape][currentCoating][currentAngle].rustPx = rustCount;
+    results[currentShape][currentCoating][currentAngle].specimenPx = specimenCount;
+
+    updateBatchTable();
+}
+
+// ===== Batch Table =====
+function updateBatchTable() {
+    const tbody = document.getElementById('batchBody');
+    tbody.innerHTML = '';
+
+    Object.keys(shapes).forEach(s => {
+        Object.keys(coatings).forEach(c => {
+            const angles = shapes[s].angles;
+            const angleResults = [];
+            let hasAny = false;
+
+            angles.forEach((label, i) => {
+                const d = results[s][c][i];
+                if (d && d.rustPercent !== undefined) {
+                    angleResults.push(d.rustPercent);
+                    hasAny = true;
+                } else {
+                    angleResults.push(null);
+                }
+            });
+
+            const tr = document.createElement('tr');
+
+            // Shape
+            const tdShape = document.createElement('td');
+            tdShape.className = 'shape-name';
+            tdShape.textContent = shapes[s].name;
+            tr.appendChild(tdShape);
+
+            // Coating
+            const tdCoat = document.createElement('td');
+            tdCoat.textContent = coatings[c];
+            tdCoat.style.fontFamily = "'Noto Sans KR', sans-serif";
+            tr.appendChild(tdCoat);
+
+            // Angle results
+            const tdAngles = document.createElement('td');
+            if (hasAny) {
+                tdAngles.textContent = angleResults.map(v => v !== null ? v + '%' : '—').join(' / ');
+            } else {
+                tdAngles.innerHTML = '<span class="no-data">미측정</span>';
+            }
+            tr.appendChild(tdAngles);
+
+            // Average
+            const tdAvg = document.createElement('td');
+            const validResults = angleResults.filter(v => v !== null);
+            if (validResults.length > 0) {
+                const avg = Math.round(validResults.reduce((a, b) => a + b, 0) / validResults.length * 10) / 10;
+                tdAvg.innerHTML = `<strong>${avg}%</strong><div class="rust-bar"><div class="rust-bar-fill" style="width:${Math.min(avg, 100)}%"></div></div>`;
+            } else {
+                tdAvg.innerHTML = '<span class="no-data">—</span>';
+            }
+            tr.appendChild(tdAvg);
+
+            // Level
+            const tdLevel = document.createElement('td');
+            tdLevel.style.fontFamily = "'Noto Sans KR', sans-serif";
+            if (validResults.length > 0) {
+                const avg = validResults.reduce((a, b) => a + b, 0) / validResults.length;
+                if (avg < 5) { tdLevel.textContent = '경미'; tdLevel.style.color = 'var(--success)'; }
+                else if (avg < 20) { tdLevel.textContent = '보통'; tdLevel.style.color = 'var(--accent)'; }
+                else if (avg < 50) { tdLevel.textContent = '심함'; tdLevel.style.color = 'var(--rust-color)'; }
+                else { tdLevel.textContent = '극심'; tdLevel.style.color = 'var(--danger)'; }
+            } else {
+                tdLevel.innerHTML = '<span class="no-data">—</span>';
+            }
+            tr.appendChild(tdLevel);
+
+            tbody.appendChild(tr);
+        });
+    });
+}
+
+// ===== Export =====
+function exportCSV() {
+    let csv = '시료,코팅,';
+    // Use max angles
+    const maxAngles = Math.max(...Object.values(shapes).map(s => s.angles.length));
+    for (let i = 0; i < maxAngles; i++) csv += `각도${i+1} (%),`;
+    csv += '평균 녹 비율 (%)\n';
+
+    Object.keys(shapes).forEach(s => {
+        Object.keys(coatings).forEach(c => {
+            csv += `${shapes[s].name},${coatings[c]},`;
+            const vals = [];
+            shapes[s].angles.forEach((_, i) => {
+                const d = results[s][c][i];
+                const v = d && d.rustPercent !== undefined ? d.rustPercent : '';
+                csv += v + ',';
+                if (v !== '') vals.push(parseFloat(v));
+            });
+            // Pad remaining angle columns
+            for (let i = shapes[s].angles.length; i < maxAngles; i++) csv += ',';
+            const avg = vals.length > 0 ? (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1) : '';
+            csv += avg + '\n';
+        });
+    });
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `실험4-1_녹면적분석_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+}
+
+function exportCurrentImage() {
+    if (!maskCanvas.width) return;
+    const link = document.createElement('a');
+    link.href = maskCanvas.toDataURL('image/png');
+    link.download = `녹분석_${shapes[currentShape].name}_${coatings[currentCoating]}_${shapes[currentShape].angles[currentAngle]}.png`;
+    link.click();
+}
+
+// ===== Init =====
+renderAngleTabs();
+updateBatchTable();
+updateDisplays();
+</script>
+</body>
+</html>
